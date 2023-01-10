@@ -1,26 +1,40 @@
-import { LineConfig } from 'konva/lib/shapes/Line';
-import { FC, useMemo } from 'react';
+import { ComponentProps, FC, useCallback, useMemo } from 'react';
 import { Line } from 'react-konva';
-import { Polygon } from '../model/geometry';
-import { GuideBox } from './GuideBox';
+import { Point, Polygon } from '../model/geometry';
+import { DraggablePoint } from './DraggablePoint';
 
 export const PolygonObject: FC<{
   value: Polygon;
-  props?: LineConfig;
-  showGuides?: boolean;
   guidesSize?: number;
-}> = ({ props, value, showGuides = false, guidesSize }) => {
+  onMovePoint?: (i: number, point: Point) => void;
+  lineProps?: ComponentProps<typeof Line>;
+}> = ({ value, guidesSize, onMovePoint, lineProps }) => {
   const points = useMemo(
     () => value.points.flatMap(({ x, y }) => [x, y]),
     [value]
   );
+  const handleMovePoint = useCallback(
+    (i: number) => (p: Point) => onMovePoint?.(i, p),
+    [onMovePoint]
+  );
+
   return (
     <>
-      <Line points={points} stroke="black" strokeWidth={1} closed {...props} />
-      {showGuides &&
-        value.points.map((point, i) => (
-          <GuideBox key={i} point={point} guideSize={guidesSize} />
-        ))}
+      <Line
+        points={points}
+        stroke="black"
+        strokeWidth={1}
+        closed
+        {...lineProps}
+      />
+      {value.points.map((point, i) => (
+        <DraggablePoint
+          key={i}
+          point={point}
+          onMovePoint={onMovePoint != null ? handleMovePoint(i) : undefined}
+          guidesSize={guidesSize}
+        />
+      ))}
     </>
   );
 };

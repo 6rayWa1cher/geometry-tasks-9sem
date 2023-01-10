@@ -1,7 +1,7 @@
 import { Box } from '@mui/system';
 import { FC } from 'react';
 
-const CenteredMarginBox: FC<{
+export const CenteredMarginBox: FC<{
   children: Children;
 }> = ({ children }) => (
   <Box
@@ -15,5 +15,3 @@ const CenteredMarginBox: FC<{
     {children}
   </Box>
 );
-
-export default CenteredMarginBox;

@@ -1,7 +1,6 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
-import CenteredMarginBox from '../components/CenteredMarginBox';
 import { PolygonObject } from '../components/PolygonObject';
 import {
   GeometryObject,
@@ -11,15 +10,10 @@ import {
   roundPoint,
   setPoint,
 } from '../model/geometry';
-import { findLast } from 'lodash';
-import { GuideBox } from '../components/GuideBox';
-
-enum MouseState {
-  NotClicked,
-  ClickedLeft,
-  ClickedRight,
-  Dragging,
-}
+import { CenteredMarginBox } from '../components/CenteredMarginBox';
+import { DraggablePoint } from '../components/DraggablePoint';
+import { isPointInPolygon } from '../services/geometry';
+import { useAsync } from 'react-use';
 
 const mainPolygonKey = 'mainPolygon';
 
@@ -31,13 +25,36 @@ const canvasWidth = 800;
 
 const canvasHeight = 600;
 
+type GeometryObjectStorage = {
+  [key: string]: GeometryObject;
+};
+
+const TestPoint: FC<{
+  geometryObjects: GeometryObjectStorage;
+  onMovePoint: (p: Point) => void;
+}> = ({ geometryObjects, onMovePoint }) => {
+  const pointInPolygon = useAsync(async () => {
+    const polygon = geometryObjects[mainPolygonKey] as Polygon;
+    const point = geometryObjects[testPointKey] as Point;
+    return isPointInPolygon(polygon, point);
+  }, [geometryObjects]);
+
+  return (
+    <DraggablePoint
+      point={geometryObjects[testPointKey] as Point}
+      onMovePoint={onMovePoint}
+      pointColor={pointInPolygon.value ?? false ? '#00FF00' : '#FF0000'}
+    />
+  );
+};
+
 export const LocalizePointPage: FC = () => {
-  const [geometryObjects, setGeometryObjects] = useState<{
-    [key: string]: GeometryObject;
-  }>(() => ({
-    [mainPolygonKey]: { points: [] },
-    [testPointKey]: roundPoint({ x: canvasWidth / 2, y: canvasHeight / 2 }),
-  }));
+  const [geometryObjects, setGeometryObjects] = useState<GeometryObjectStorage>(
+    () => ({
+      [mainPolygonKey]: { points: [] },
+      [testPointKey]: roundPoint({ x: canvasWidth / 2, y: canvasHeight / 2 }),
+    })
+  );
 
   const points = useMemo(
     () =>
@@ -52,80 +69,43 @@ export const LocalizePointPage: FC = () => {
     [points]
   );
 
-  const [mouseState, setMouseState] = useState<MouseState>(
-    MouseState.NotClicked
-  );
-
-  const [selectedPoint, setSelectedPoint] = useState<number>();
-  const [selectedObject, setSelectedObject] = useState<string>();
   const handleMouseDownEvent = useCallback(
     (o: KonvaEventObject<MouseEvent>) => {
       const newPoint: Point = roundPoint(
         o.currentTarget.getRelativePointerPosition()
       );
-      const foundEntry = findLast(
-        points,
-        ([, , { x, y }]) =>
-          Math.abs(x - newPoint.x) <= boxSize &&
-          Math.abs(y - newPoint.y) <= boxSize
-      );
-
-      let foundPoint, foundObject;
-
-      if (foundEntry != null) {
-        foundObject = foundEntry[0];
-        foundPoint = foundEntry[1];
-      } else {
-        const polygon = geometryObjects[mainPolygonKey];
-        const newPolygon = setPoint(
-          getPoints(polygon).length,
-          polygon,
-          newPoint
-        );
-        setGeometryObjects({
-          ...geometryObjects,
-          [mainPolygonKey]: newPolygon,
-        });
-        foundObject = mainPolygonKey;
-        foundPoint = getPoints(newPolygon).length - 1;
-      }
-
-      setSelectedObject(foundObject);
-      setSelectedPoint(foundPoint);
-    },
-    [geometryObjects, points]
-  );
-
-  const handleMouseMoveEvent = useCallback(
-    (o: KonvaEventObject<MouseEvent>) => {
-      if (selectedObject == null || selectedPoint == null) return;
-      const polygon = geometryObjects[selectedObject];
-      const newPoint: Point = roundPoint(
-        o.currentTarget.getRelativePointerPosition()
-      );
-      const newPolygon = setPoint(selectedPoint, polygon, newPoint);
+      const polygon = geometryObjects[mainPolygonKey];
+      const newPolygon = setPoint(getPoints(polygon).length, polygon, newPoint);
       setGeometryObjects({
         ...geometryObjects,
-        [selectedObject]: newPolygon,
+        [mainPolygonKey]: newPolygon,
       });
     },
-    [geometryObjects, selectedObject, selectedPoint]
+    [geometryObjects]
   );
 
-  const handleMouseUpEvent = useCallback((o: KonvaEventObject<MouseEvent>) => {
-    setSelectedObject(undefined);
-    setSelectedPoint(undefined);
-  }, []);
+  const handleMovePoint = useCallback(
+    (obj: string) => (i: number, point: Point) => {
+      const polygon = geometryObjects[obj];
+      const newPolygon = setPoint(i, polygon, point);
+      setGeometryObjects({
+        ...geometryObjects,
+        [obj]: newPolygon,
+      });
+    },
+    [geometryObjects]
+  );
+
+  const pointInPolygon = useAsync(async () => {
+    const polygon = geometryObjects[mainPolygonKey] as Polygon;
+    const point = geometryObjects[testPointKey] as Point;
+    return isPointInPolygon(polygon, point);
+  }, [geometryObjects]);
 
   return (
     <CenteredMarginBox>
       <Stage width={canvasWidth} height={canvasHeight}>
-        <Layer
-          onMouseDown={handleMouseDownEvent}
-          onMouseMove={handleMouseMoveEvent}
-          onMouseLeave={handleMouseUpEvent}
-          onMouseUp={handleMouseUpEvent}
-        >
+        <Layer>
           <Rect
             x={0}
             y={0}
@@ -134,13 +114,20 @@ export const LocalizePointPage: FC = () => {
             stroke="black"
             strokeWidth={4}
             fill="#FFFFFF"
+            onMouseDown={handleMouseDownEvent}
           />
           <PolygonObject
             value={geometryObjects[mainPolygonKey] as Polygon}
             guidesSize={boxSize}
-            showGuides
+            onMovePoint={handleMovePoint(mainPolygonKey)}
+            lineProps={{
+              onMouseDown: handleMouseDownEvent,
+            }}
           />
-          <GuideBox
+          <TestPoint
+            geometryObjects={geometryObjects}
+            onMovePoint={(p) => handleMovePoint(testPointKey)(0, p)}
+          />
         </Layer>
       </Stage>
     </CenteredMarginBox>
