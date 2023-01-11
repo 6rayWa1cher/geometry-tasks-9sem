@@ -1,4 +1,11 @@
-import { Paper, Grid, IconButton } from '@mui/material';
+import {
+  Paper,
+  Grid,
+  IconButton,
+  FormControlLabel,
+  FormGroup,
+  Switch,
+} from '@mui/material';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { CanvasWithExplorer } from '../components/CanvasWithExplorer';
 import { CenteredMarginBox } from '../components/CenteredMarginBox';
@@ -13,7 +20,7 @@ import {
 import { Polygon, roundPoint } from '../model/geometry';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { SliderWithLabel } from '../components/SliderWithLabel';
-import { generatePolygon } from '../services/geometry';
+import { generateConvexPolygon, generatePolygon } from '../services/geometry';
 
 export const GeneratePolygonPage: FC = () => {
   const [geometryObjects, setGeometryObjects] = useState<GeometryObjectStorage>(
@@ -36,8 +43,16 @@ export const GeneratePolygonPage: FC = () => {
     [setRadBounds]
   );
 
+  const [convex, setConvex] = useState(false);
+
+  const handleConvexChange = useCallback(
+    (_: unknown, value: boolean) => setConvex(value),
+    [setConvex]
+  );
+
   const refreshPolygon = useCallback(() => {
-    const polygon = generatePolygon({
+    const generator = convex ? generateConvexPolygon : generatePolygon;
+    const polygon = generator({
       radBounds,
       gradBounds,
       center: roundPoint({ x: canvasWidth / 2, y: canvasHeight / 2 }),
@@ -46,15 +61,14 @@ export const GeneratePolygonPage: FC = () => {
       ...geometryObjects,
       [mainPolygonKey]: polygon,
     });
-  }, [geometryObjects, gradBounds, radBounds]);
+  }, [convex, geometryObjects, gradBounds, radBounds]);
 
   useEffect(
-    // () => console.log('refreshed'),
     () => {
       refreshPolygon();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [gradBounds[0], gradBounds[1], radBounds[0], radBounds[1]]
+    [gradBounds[0], gradBounds[1], radBounds[0], radBounds[1], convex]
   );
 
   return (
@@ -83,6 +97,16 @@ export const GeneratePolygonPage: FC = () => {
               value={radBounds}
               onChange={handleRadBoundsChange}
             />
+          </Grid>
+          <Grid item>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch checked={convex} onChange={handleConvexChange} />
+                }
+                label="Выпуклый"
+              />
+            </FormGroup>
           </Grid>
         </Grid>
       </Paper>
