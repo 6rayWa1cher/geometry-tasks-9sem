@@ -1,27 +1,23 @@
-import { useState, useCallback } from "react";
-import { styled, useTheme } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import MuiDrawer from "@mui/material/Drawer";
-import Box from "@mui/material/Box";
-import MuiAppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import type { TypographyProps } from "@mui/material/Typography";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import Container from "@mui/material/Container";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import {
-  adminListItems,
-  secondaryListItems,
-  teacherListItems,
-} from "./ListItems";
-import { Outlet, useNavigate } from "react-router-dom";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { useMediaQuery } from "@mui/material";
-import { HomeButton } from "../buttons/HomeButton";
+import { useState, useCallback } from 'react';
+import { styled, useTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import MuiDrawer from '@mui/material/Drawer';
+import Box from '@mui/material/Box';
+import MuiAppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import type { TypographyProps } from '@mui/material/Typography';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Container from '@mui/material/Container';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { listItems } from './ListItems';
+import { Outlet, useNavigate } from 'react-router-dom';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useMediaQuery } from '@mui/material';
+import { HomeButton } from '../buttons/HomeButton';
 
 const Copyright = (props: TypographyProps) => {
   const yearRange = (() => {
@@ -33,9 +29,9 @@ const Copyright = (props: TypographyProps) => {
   })();
   return (
     <Typography variant="body2" color="text.secondary" {...props}>
-      {"Сделано 6rayWa1cher, "}
+      {'Сделано 6rayWa1cher, '}
       {yearRange}
-      {"."}
+      {'.'}
     </Typography>
   );
 };
@@ -44,7 +40,7 @@ const LogoutButton = () => {
   const navigate = useNavigate();
 
   const onClick = useCallback(() => {
-    navigate("/logout");
+    navigate('/logout');
   }, [navigate]);
 
   return (
@@ -61,17 +57,17 @@ interface AppBarProps {
 }
 
 const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
+  shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
+  transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
+    transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
@@ -79,21 +75,21 @@ const AppBar = styled(MuiAppBar, {
 }));
 
 const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
+  shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
-  "& .MuiDrawer-paper": {
-    position: "relative",
-    whiteSpace: "nowrap",
+  '& .MuiDrawer-paper': {
+    position: 'relative',
+    whiteSpace: 'nowrap',
     width: drawerWidth,
-    transition: theme.transitions.create("width", {
+    transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    overflow: "hidden",
-    boxSizing: "border-box",
+    overflow: 'hidden',
+    boxSizing: 'border-box',
     ...(!open && {
-      overflowX: "hidden",
-      transition: theme.transitions.create("width", {
+      overflowX: 'hidden',
+      transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.leavingScreen,
       }),
@@ -112,14 +108,14 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
     setOpen(!open);
   };
   const theme = useTheme();
-  const largeScreen = useMediaQuery(theme.breakpoints.up("sm"));
+  const largeScreen = useMediaQuery(theme.breakpoints.up('sm'));
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar position="absolute" open={open}>
         <Toolbar
           sx={{
-            pr: "24px", // keep right padding when drawer closed
+            pr: '24px', // keep right padding when drawer closed
           }}
         >
           <IconButton
@@ -128,8 +124,8 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
             aria-label="open drawer"
             onClick={toggleDrawer}
             sx={{
-              marginRight: "36px",
-              ...(open && { display: "none" }),
+              marginRight: '36px',
+              ...(open && { display: 'none' }),
             }}
           >
             <MenuIcon />
@@ -144,9 +140,9 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
         <Container sx={{ width: drawerWidth }} disableGutters>
           <Toolbar
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
               px: [1],
             }}
           >
@@ -155,6 +151,7 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
             </IconButton>
           </Toolbar>
           <Divider />
+          <List dense>{listItems}</List>
           {/* {role != null && (
             <>
               <List>
@@ -169,7 +166,7 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
           {/* <Container maxWidth="xs" sx={{ pt: 2 }}>
             <ThemeToggle />
           </Container> */}
-          <Container maxWidth="xs" sx={{ whiteSpace: "normal" }}>
+          <Container maxWidth="xs" sx={{ whiteSpace: 'normal' }}>
             <Copyright sx={{ pt: 2 }} />
           </Container>
         </Container>
@@ -178,12 +175,12 @@ const DashboardContent = ({ children }: DashboardFrameProps) => {
         component="main"
         sx={{
           backgroundColor: (theme) =>
-            theme.palette.mode === "light"
+            theme.palette.mode === 'light'
               ? theme.palette.grey[100]
               : theme.palette.grey[900],
           flexGrow: 1,
-          height: "100vh",
-          overflow: "auto",
+          height: '100vh',
+          overflow: 'auto',
         }}
       >
         <Toolbar />

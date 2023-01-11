@@ -1,64 +1,15 @@
-import { maxBy } from 'lodash';
-import { Point, Polygon } from '../model/geometry';
+import { maxBy, random } from 'lodash';
+import { Point, Polygon, roundPoint } from '../model/geometry';
 
 const e = 1e-9;
 
-// const intersect_1 = (
-//   _a: number,
-//   _b: number,
-//   _c: number,
-//   _d: number
-// ): boolean => {
-//   let a = _a;
-//   let b = _b;
-//   let c = _c;
-//   let d = _d;
-//   if (a > b) {
-//     [a, b] = [b, a];
-//   }
-//   if (c > d) {
-//     [c, d] = [d, c];
-//   }
-//   return Math.max(a, c) <= Math.min(b, d);
-// };
-
-const det = (a: number, b: number, c: number, d: number) => a * d - b * c;
-
-const between = (a: number, b: number, c: number) =>
-  Math.min(a, b) <= c + e && c <= Math.max(a, b) + e;
-
 const intersection = (a: Point, b: Point, c: Point, d: Point): Point | null => {
-  // const a1 = a.y - b.y;
-  // const b1 = b.x - a.x;
-  // const c1 = -a1 * a.x - b1 * a.y;
-  // const a2 = c.y - d.y;
-  // const b2 = d.x - c.x;
-  // const c2 = -a2 * c.x - b2 * c.y;
-  // const zn = det(a1, b1, a2, b2);
-  // if (!approxEquals(zn, 0)) {
-  //   const x = (-det(c1, b1, c2, b2) * 1) / zn;
-  //   const y = (-det(a1, c1, a2, c2) * 1) / zn;
-  //   return (
-  //     between(a.x, b.x, x) &&
-  //     between(a.y, b.y, y) &&
-  //     between(c.x, d.x, x) &&
-  //     between(c.y, d.y, y)
-  //   );
-  // } else {
-  //   return (
-  //     approxEquals(det(a1, c1, a2, c2), 0) &&
-  //     approxEquals(det(b1, c1, b2, c2), 0) &&
-  //     intersect_1(a.x, b.x, c.x, d.x) &&
-  //     intersect_1(a.y, b.y, c.y, d.y)
-  //   );
-  // }
   const k = (a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x);
 
   const t = ((a.x - c.x) * (c.y - d.y) - (a.y - c.y) * (c.x - d.x)) / k;
   const u = ((a.x - c.x) * (a.y - b.y) - (a.y - c.y) * (a.x - b.x)) / k;
 
   if (!(0 <= t && t <= 1 && 0 <= u && u <= 1) || k == 0) {
-    console.log(false);
     return null;
   }
 
@@ -101,4 +52,43 @@ export const isPointInPolygon = (poly: Polygon, p: Point): boolean => {
     }
   }
   return intersections % 2 == 1;
+};
+
+type PolarPoint = { phi: number; r: number };
+
+const radians = (degrees: number) => (degrees * Math.PI) / 180;
+
+const polarToCartesian = ({ phi, r }: PolarPoint): Point => ({
+  x: r * Math.cos(radians(phi)),
+  y: r * Math.sin(radians(phi)),
+});
+
+type GeneratePolygonArgs = {
+  radBounds: [number, number];
+  gradBounds: [number, number];
+  center: Point;
+};
+
+export const generatePolygon = ({
+  radBounds: [r1, r2],
+  gradBounds: [q1, q2],
+  center,
+}: GeneratePolygonArgs): Polygon => {
+  const polarPoints: PolarPoint[] = [{ phi: 0, r: random(r1, r2) }];
+  let lastPolar = polarPoints[0];
+  while (lastPolar.phi < 360) {
+    const nextPolar = {
+      phi: lastPolar.phi + random(q1, q2),
+      r: random(r1, r2),
+    };
+    polarPoints.push(nextPolar);
+    lastPolar = nextPolar;
+  }
+  return {
+    points: polarPoints
+      .map(polarToCartesian)
+      .map(roundPoint)
+      .map(({ x, y }) => ({ x: x + center.x, y: y + center.y }))
+      .slice(0, polarPoints.length - 1),
+  };
 };

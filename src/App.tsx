@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { LocalizePointPage } from './pages/LocalizePointPage';
 import { Dashboard } from './components/DashboardFrame';
 import { MainPage } from './pages/MainPage';
+import { tasksList } from './conf/tasks';
 
 const router = createBrowserRouter([
   {
@@ -12,10 +12,7 @@ const router = createBrowserRouter([
         index: true,
         element: <MainPage />,
       },
-      {
-        path: 'localize-point',
-        element: <LocalizePointPage />,
-      },
+      ...tasksList.map(({ to, element }) => ({ path: to, element })),
     ],
   },
 ]);
