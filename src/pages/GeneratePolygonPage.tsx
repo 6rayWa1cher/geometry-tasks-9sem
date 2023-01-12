@@ -20,7 +20,11 @@ import {
 import { Polygon, roundPoint } from '../model/geometry';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { SliderWithLabel } from '../components/SliderWithLabel';
-import { generateConvexPolygon, generatePolygon } from '../services/geometry';
+import {
+  generateConvexPolygon,
+  generatePolygon,
+  isConvexPolygon,
+} from '../services/geometry';
 
 export const GeneratePolygonPage: FC = () => {
   const [geometryObjects, setGeometryObjects] = useState<GeometryObjectStorage>(
@@ -50,6 +54,8 @@ export const GeneratePolygonPage: FC = () => {
     [setConvex]
   );
 
+  const [trueConvex, setTrueConvex] = useState(false);
+
   const refreshPolygon = useCallback(() => {
     const generator = convex ? generateConvexPolygon : generatePolygon;
     const polygon = generator({
@@ -57,6 +63,7 @@ export const GeneratePolygonPage: FC = () => {
       gradBounds,
       center: roundPoint({ x: canvasWidth / 2, y: canvasHeight / 2 }),
     });
+    setTrueConvex(isConvexPolygon(polygon));
     setGeometryObjects({
       ...geometryObjects,
       [mainPolygonKey]: polygon,
@@ -114,6 +121,7 @@ export const GeneratePolygonPage: FC = () => {
         <PolygonObject
           value={geometryObjects[mainPolygonKey] as Polygon}
           guidesSize={boxSize}
+          lineProps={{ stroke: trueConvex ? '#00FF00' : '#FF0000' }}
         />
       </CanvasWithExplorer>
     </CenteredMarginBox>

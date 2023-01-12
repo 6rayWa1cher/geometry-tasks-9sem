@@ -9,7 +9,7 @@ export const tasksList = [
     element: <LocalizePointPage />,
   },
   {
-    num: [2],
+    num: [2, 3, 4],
     to: '/generate-polygon',
     label: 'Генерация полигона',
     element: <GeneratePolygonPage />,

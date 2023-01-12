@@ -218,3 +218,23 @@ export const generateConvexPolygon = ({
     points: out,
   };
 };
+
+const mod = (n: number, m: number) => {
+  return ((n % m) + m) % m;
+};
+
+export const isConvexPolygon = ({ points }: Polygon): boolean => {
+  const len = points.length;
+  if (len < 4) return true;
+  const signs = new Set();
+  for (let i = 0; i < len; i++) {
+    const p1 = points[mod(i - 1, len)];
+    const p2 = points[i];
+    const p3 = points[mod(i + 1, len)];
+    const v1 = vectorFromPoints(p1, p2);
+    const v2 = vectorFromPoints(p2, p3);
+    const sign = v1.multiply(v2);
+    if (!approxEquals(sign, 0)) signs.add(sign > 0);
+  }
+  return signs.size != 2;
+};

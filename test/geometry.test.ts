@@ -1,5 +1,6 @@
 import {
   degBetweenVectors,
+  isConvexPolygon,
   isPointNotAboveLine,
   isPointNotBelowLine,
   sortPointsVertically,
@@ -100,4 +101,23 @@ test('degBetweenVectors: case when clockwise', () => {
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p1, p3);
   expect(degBetweenVectors(v1, v2)).toBeCloseTo((7 * Math.PI) / 4);
+});
+
+test('isConvexPolygon: positive', () => {
+  const p1 = { x: 0, y: 0 };
+  const p2 = { x: 10, y: 0 };
+  const p3 = { x: 10, y: 10 };
+  const p4 = { x: 0, y: 10 };
+  expect(isConvexPolygon({ points: [p1, p2, p3, p4] })).toBe(true);
+  expect(isConvexPolygon({ points: [p4, p3, p2, p1] })).toBe(true);
+});
+
+test('isConvexPolygon: negative', () => {
+  const p1 = { x: 0, y: 0 };
+  const p2 = { x: 10, y: 0 };
+  const p3 = { x: 10, y: 10 };
+  const p4 = { x: 5, y: 5 };
+  const p5 = { x: 0, y: 10 };
+  expect(isConvexPolygon({ points: [p1, p2, p3, p4, p5] })).toBe(false);
+  expect(isConvexPolygon({ points: [p5, p4, p3, p2, p1] })).toBe(false);
 });
