@@ -9,7 +9,15 @@ export const Canvas: FC<{
   children?: Children;
 }> = ({ rectProps, width = canvasWidth, height = canvasHeight, children }) => {
   return (
-    <Stage width={width} height={height}>
+    <Stage
+      width={width}
+      height={height}
+      onContextMenu={(e) => {
+        e.evt.preventDefault();
+        e.evt.stopPropagation();
+        return false;
+      }}
+    >
       <Layer>
         <Rect
           x={0}

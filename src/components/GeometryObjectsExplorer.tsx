@@ -7,7 +7,7 @@ export type GeometryObjectStorage = {
 };
 
 const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID' },
+  { field: 'id', headerName: 'ID', width: 200 },
   { field: 'value', headerName: 'Значение', flex: 1 },
 ];
 
@@ -29,6 +29,7 @@ export const GeometryObjectsExplorer: FC<{
       pageSize={10}
       rowsPerPageOptions={[10]}
       getRowHeight={() => 'auto'}
+      autoHeight
     />
   );
 };

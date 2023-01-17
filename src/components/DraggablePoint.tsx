@@ -1,14 +1,23 @@
 import { KonvaEventObject } from 'konva/lib/Node';
-import { FC, useCallback } from 'react';
+import { ComponentProps, FC, useCallback } from 'react';
 import { Circle, Group, Rect } from 'react-konva';
 import { Point, roundPoint } from '../model/geometry';
 
 export const DraggablePoint: FC<{
   point: Point;
+  onClickPoint?: (e: KonvaEventObject<MouseEvent>) => void;
   onMovePoint?: (point: Point) => void;
   guidesSize?: number;
   pointColor?: string;
-}> = ({ point, onMovePoint, guidesSize = 11, pointColor = '#000000' }) => {
+  groupProps?: ComponentProps<typeof Group>;
+}> = ({
+  point,
+  onClickPoint,
+  onMovePoint,
+  guidesSize = 11,
+  pointColor = '#000000',
+  groupProps,
+}) => {
   const { x, y } = point;
   const offset = (guidesSize - 1) / 2;
   const handleDragMove = useCallback(
@@ -29,7 +38,9 @@ export const DraggablePoint: FC<{
       width={guidesSize}
       height={guidesSize}
       draggable={onMovePoint != null}
+      onClick={onClickPoint}
       onDragMove={handleDragMove}
+      {...groupProps}
     >
       <Rect
         x={0}

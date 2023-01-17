@@ -1,5 +1,7 @@
 import {
+  ConvexAlgorithm,
   degBetweenVectors,
+  getConvex,
   isConvexPolygon,
   isPointNotAboveLine,
   isPointNotBelowLine,
@@ -120,4 +122,15 @@ test('isConvexPolygon: negative', () => {
   const p5 = { x: 0, y: 10 };
   expect(isConvexPolygon({ points: [p1, p2, p3, p4, p5] })).toBe(false);
   expect(isConvexPolygon({ points: [p5, p4, p3, p2, p1] })).toBe(false);
+});
+
+test('getConvexJarvis: square with dot', () => {
+  const p1 = { x: 0, y: 0 };
+  const p2 = { x: 10, y: 0 };
+  const p3 = { x: 10, y: 10 };
+  const p4 = { x: 5, y: 5 };
+  const p5 = { x: 0, y: 10 };
+  expect(
+    getConvex([p1, p2, p3, p4, p5], ConvexAlgorithm.Jarvis).points
+  ).toMatchObject([p1, p2, p3, p5]);
 });

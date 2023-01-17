@@ -57,10 +57,10 @@ export const LocalizePointPage: FC = () => {
       );
       const polygon = geometryObjects[mainPolygonKey];
       const newPolygon = setPoint(getPoints(polygon).length, polygon, newPoint);
-      setGeometryObjects({
+      setGeometryObjects((geometryObjects) => ({
         ...geometryObjects,
         [mainPolygonKey]: newPolygon,
-      });
+      }));
     },
     [geometryObjects]
   );

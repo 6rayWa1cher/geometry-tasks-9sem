@@ -1,5 +1,6 @@
 import { LocalizePointPage } from '../pages/LocalizePointPage';
 import { GeneratePolygonPage } from '../pages/GeneratePolygonPage';
+import { ConvexFinderPage } from '../pages/ConvexFinderPage';
 
 export const tasksList = [
   {
@@ -13,5 +14,11 @@ export const tasksList = [
     to: '/generate-polygon',
     label: 'Генерация полигона',
     element: <GeneratePolygonPage />,
+  },
+  {
+    num: [9, 10],
+    to: '/convex-finder',
+    label: 'Нахождение выпуклой оболочки',
+    element: <ConvexFinderPage />,
   },
 ];

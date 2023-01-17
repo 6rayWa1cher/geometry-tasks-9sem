@@ -64,11 +64,11 @@ export const GeneratePolygonPage: FC = () => {
       center: roundPoint({ x: canvasWidth / 2, y: canvasHeight / 2 }),
     });
     setTrueConvex(isConvexPolygon(polygon));
-    setGeometryObjects({
+    setGeometryObjects((geometryObjects) => ({
       ...geometryObjects,
       [mainPolygonKey]: polygon,
-    });
-  }, [convex, geometryObjects, gradBounds, radBounds]);
+    }));
+  }, [convex, gradBounds, radBounds]);
 
   useEffect(
     () => {
