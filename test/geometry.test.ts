@@ -124,13 +124,34 @@ test('isConvexPolygon: negative', () => {
   expect(isConvexPolygon({ points: [p5, p4, p3, p2, p1] })).toBe(false);
 });
 
-test('getConvexJarvis: square with dot', () => {
-  const p1 = { x: 0, y: 0 };
-  const p2 = { x: 10, y: 0 };
-  const p3 = { x: 10, y: 10 };
-  const p4 = { x: 5, y: 5 };
-  const p5 = { x: 0, y: 10 };
-  expect(
-    getConvex([p1, p2, p3, p4, p5], ConvexAlgorithm.Jarvis).points
-  ).toMatchObject([p1, p2, p3, p5]);
+describe('getConvex', () => {
+  describe('square with dot', () => {
+    const p1 = { x: 0, y: 0 };
+    const p2 = { x: 10, y: 1 };
+    const p3 = { x: 11, y: 9 };
+    const p4 = { x: 5, y: 5 };
+    const p5 = { x: 1, y: 10 };
+    const input = [p1, p2, p3, p4, p5];
+
+    test('Triangle', () => {
+      const expected = [p3, p5, p1, p2];
+      expect(getConvex(input, ConvexAlgorithm.Triangle).points).toMatchObject(
+        expected
+      );
+    });
+
+    test('Jarvis', () => {
+      const expected = [p1, p2, p3, p5];
+      expect(getConvex(input, ConvexAlgorithm.Jarvis).points).toMatchObject(
+        expected
+      );
+    });
+
+    test('Graham', () => {
+      const expected = [p2, p3, p5, p1];
+      expect(getConvex(input, ConvexAlgorithm.Graham).points).toMatchObject(
+        expected
+      );
+    });
+  });
 });

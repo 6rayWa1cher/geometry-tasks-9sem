@@ -1,4 +1,4 @@
-import { isEqual, maxBy, random, sumBy } from 'lodash';
+import { maxBy, random, sortBy, sumBy } from 'lodash';
 import { Point, Polygon, roundPoint } from '../model/geometry';
 
 const e = 1e-9;
@@ -138,9 +138,6 @@ export const isPointNotBelowLine = (
   p2: Point,
   p: Point
 ): boolean => {
-  // if (p1.x > p2.x) {
-  //   [p1, p2] = [p2, p1];
-  // }
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p1, p);
   return v1.multiply(v2) >= 0;
@@ -151,9 +148,6 @@ export const isPointNotAboveLine = (
   p2: Point,
   p: Point
 ): boolean => {
-  // if (p1.x > p2.x) {
-  //   [p1, p2] = [p2, p1];
-  // }
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p1, p);
   console.log(v1.multiply(v2));
@@ -246,6 +240,7 @@ export const isConvexPolygon = ({ points }: Polygon): boolean => {
 export enum ConvexAlgorithm {
   Triangle = 'triangle',
   Jarvis = 'jarvis',
+  Graham = 'graham',
 }
 
 const getConvexSimple = (points: Point[]): Polygon => {
@@ -279,78 +274,14 @@ const getConvexSimple = (points: Point[]): Polygon => {
   return { points: outPoints };
 };
 
-// const getConvexJarvis = (points: Point[]): Polygon => {
-//   const p1 = points.sort((a, b) =>
-//     approxEquals(a.y, b.y) ? a.x - b.x : a.y - b.y
-//   )[0];
-//   const v = new Vector(1, 0);
-//   const p2 = points
-//     .filter((p) => !pointsApproxEquals(p, p1))
-//     .map(
-//       (p) =>
-//         [p, degBetweenVectors(v, vectorFromPoints(p1, p))] as [Point, number]
-//     )
-//     .filter(([, v]) => v >= 0)
-//     .sort((a, b) => a[1] - b[1])[0][0];
-//   const pArr = [p1, p2];
-//   const pSet = new Set(pArr);
-//   let i = 2;
-//   do {
-//     for (const p of points) {
-//       if (pSet.has(p) && ) continue;
-//     }
-//   } while (!pointsApproxEquals(p[i], p1));
-// };
-
-// const getPolar = ()
-
-// const getConvexJarvis = (points: Point[]): Polygon => {
-//   if (points.length < 4) return { points };
-//   const sorted = points.sort((a, b) =>
-//     // approxEquals(a.x, b.x) ? b.y - a.y : b.x - a.x
-//     approxEquals(a.y, b.y) ? a.x - b.x : a.y - b.y
-//   );
-//   console.log(sorted);
-//   let p0 = sorted[0];
-//   for (const p of points) {
-//     if (p.x < p0.x || (p.x == p0.x && p.y < p0.y)) {
-//       p0 = p;
-//     }
-//   }
-//   const convex: Point[] = [p0];
-//   while (true) {
-//     let t = p0;
-
-//     for (const p of points) {
-//       if (vectorFromPoints(p0, p).multiplyLeft(vectorFromPoints(p0, t)) >= 0) {
-//         t = p;
-//       }
-//     }
-//     if (pointsApproxEquals(t, p0)) {
-//       break;
-//     } else {
-//       p0 = t;
-//       convex.push(t);
-//     }
-//   }
-//   return { points: convex };
-// };
-
 const cosAngle = (p1: Point, p2: Point, p3: Point): number => {
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p2, p3);
   return Math.acos((v1.x * v2.x + v1.y * v2.y) / (v1.length() * v2.length()));
-  // return -degBetweenVectors(v1, v2);
 };
-// const cosAngle = (p1: Point, p2: Point, p3: Point): number => {
-//   return (
-//     Math.atan2(p3.y - p1.y, p3.x - p1.x) - Math.atan2(p2.y - p1.y, p2.x - p1.x)
-//   );
-// };
 
-const getConvexJarvis = (pts: Point[]): Polygon => {
-  if (pts.length < 4) return { points: pts };
-  let points = [...pts];
+const getConvexJarvis = (points: Point[]): Polygon => {
+  if (points.length < 4) return { points };
   let first = points[0];
   for (const p of points) {
     if (p.y < first.y) {
@@ -369,7 +300,6 @@ const getConvexJarvis = (pts: Point[]): Polygon => {
     for (let i = 0; i < points.length; i++) {
       const curCosAngle = cosAngle(prev, cur, points[i]);
       const curLen = vectorFromPoints(cur, points[i]).length();
-      console.log(cur, curCosAngle, curLen);
       if (curCosAngle <= minCosAngle) {
         next = i;
         minCosAngle = curCosAngle;
@@ -382,11 +312,48 @@ const getConvexJarvis = (pts: Point[]): Polygon => {
     prev = cur;
     cur = points[next];
     convex.push(cur);
-    // points = points.filter((p) => !pointsApproxEquals(cur, p));
     if (convex.length > 500)
       throw new Error(convex.map(({ x, y }) => `(${x};${y})`).join(','));
   } while (!pointsApproxEquals(cur, first));
   convex.pop();
+  return { points: convex };
+};
+
+const getLast = <T>(a: T[], i = 1): T => a[a.length - i];
+
+const atan2Angle = (v1: Vector, v2: Vector): number => {
+  const dot = v1.x * v2.x + v1.y * v2.y;
+  const det = v1.multiplyLeft(v2);
+  return Math.atan2(det, dot);
+};
+
+export const getConvexGraham = (points: Point[]): Polygon => {
+  if (points.length < 4) return { points };
+  let p0 = points[0];
+  for (const p of points) {
+    if (p.y < p0.y || (approxEquals(p.y, p0.y) && p.x > p0.x)) {
+      p0 = p;
+    }
+  }
+  const fp = { x: p0.x + 1, y: p0.y };
+  const pts = points.sort((a, b) => {
+    return cosAngle(p0, fp, a) - cosAngle(p0, fp, b);
+  });
+
+  const convex: Point[] = [];
+  for (const p of pts) {
+    while (convex.length >= 2) {
+      const pn = getLast(convex, 1);
+      const pn1 = getLast(convex, 2);
+      const a = atan2Angle(vectorFromPoints(pn1, pn), vectorFromPoints(pn, p));
+      if (a < 0) {
+        convex.pop();
+      } else {
+        break;
+      }
+    }
+    convex.push(p);
+  }
   return { points: convex };
 };
 
@@ -399,5 +366,7 @@ export const getConvex = (
       return getConvexJarvis(points);
     case ConvexAlgorithm.Triangle:
       return getConvexSimple(points);
+    case ConvexAlgorithm.Graham:
+      return getConvexGraham(points);
   }
 };
