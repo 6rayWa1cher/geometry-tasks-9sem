@@ -21,7 +21,6 @@ import { roundPoint, Point, Polygon } from '../model/geometry';
 import { ConvexAlgorithm, getConvex } from '../services/geometry';
 import { useMovePointHandler } from '../utils/hooks';
 
-// let id = 0;
 const getNextId = () => nanoid();
 
 const secondaryButton = 2;

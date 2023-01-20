@@ -1,6 +1,6 @@
 import {
   ConvexAlgorithm,
-  degBetweenVectors,
+  polarAngleDeg,
   getConvex,
   isConvexPolygon,
   isPointNotAboveLine,
@@ -93,7 +93,7 @@ test('degBetweenVectors: case when counterclockwise', () => {
   const p3 = { x: 1, y: -1 };
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p1, p3);
-  expect(degBetweenVectors(v1, v2)).toBeCloseTo(Math.PI / 4);
+  expect(polarAngleDeg(v1, v2)).toBeCloseTo(Math.PI / 4);
 });
 
 test('degBetweenVectors: case when clockwise', () => {
@@ -102,7 +102,7 @@ test('degBetweenVectors: case when clockwise', () => {
   const p3 = { x: 1, y: 1 };
   const v1 = vectorFromPoints(p1, p2);
   const v2 = vectorFromPoints(p1, p3);
-  expect(degBetweenVectors(v1, v2)).toBeCloseTo((7 * Math.PI) / 4);
+  expect(polarAngleDeg(v1, v2)).toBeCloseTo((7 * Math.PI) / 4);
 });
 
 test('isConvexPolygon: positive', () => {
@@ -134,7 +134,7 @@ describe('getConvex', () => {
     const input = [p1, p2, p3, p4, p5];
 
     test('Triangle', () => {
-      const expected = [p3, p5, p1, p2];
+      const expected = [p1, p2, p3, p5];
       expect(getConvex(input, ConvexAlgorithm.Triangle).points).toMatchObject(
         expected
       );

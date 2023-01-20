@@ -96,18 +96,21 @@ export const isPointInPolygon = (poly: Polygon, p: Point): boolean => {
   return intersections % 2 == 1;
 };
 
-type PolarPoint = { phi: number; r: number };
+interface PolarPoint {
+  phi: number;
+  r: number;
+}
 
 const polarToCartesian = ({ phi, r }: PolarPoint): Point => ({
   x: r * Math.cos(radians(phi)),
   y: r * Math.sin(radians(phi)),
 });
 
-type GeneratePolygonArgs = {
+interface GeneratePolygonArgs {
   radBounds: [number, number];
   gradBounds: [number, number];
   center: Point;
-};
+}
 
 export const generatePolygon = ({
   radBounds: [r1, r2],
@@ -161,11 +164,26 @@ const getCenter = (points: Point[]): Point => {
   return { x: xSum / len, y: ySum / len };
 };
 
-export const degBetweenVectors = (v1: Vector, v2: Vector): number => {
+// true polar angle from 0 to 360
+export const polarAngleDeg = (v1: Vector, v2: Vector): number => {
   const dot = v1.x * v2.x + v1.y * v2.y;
   const det = v1.multiply(v2);
   const atan = Math.atan2(det, dot);
   return atan >= 0 ? atan : 2 * Math.PI + atan;
+};
+
+// pos - above, neg - below, from -pi to pi
+const atan2AngleRad = (v1: Vector, v2: Vector): number => {
+  const dot = v1.x * v2.x + v1.y * v2.y;
+  const det = v1.multiplyLeft(v2);
+  return Math.atan2(det, dot);
+};
+
+// only pos angle values from 0 to 180
+const cosAngleDeg = (p1: Point, p2: Point, p3: Point): number => {
+  const v1 = vectorFromPoints(p1, p2);
+  const v2 = vectorFromPoints(p2, p3);
+  return Math.acos((v1.x * v2.x + v1.y * v2.y) / (v1.length() * v2.length()));
 };
 
 export const generateConvexPolygon = ({
@@ -252,7 +270,10 @@ const getConvexSimple = (points: Point[]): Polygon => {
           if (
             pointsApproxEquals(pt, p1) ||
             pointsApproxEquals(pt, p2) ||
-            pointsApproxEquals(pt, p3)
+            pointsApproxEquals(pt, p3) ||
+            pointsApproxEquals(p1, p2) ||
+            pointsApproxEquals(p2, p3) ||
+            pointsApproxEquals(p1, p3)
           )
             continue;
           if (isPointInPolygon({ points: [p1, p2, p3] }, pt)) {
@@ -265,23 +286,14 @@ const getConvexSimple = (points: Point[]): Polygon => {
   }
   const convexPointsArr = [...convexPoints];
   const center = getCenter(convexPointsArr);
-  const outPoints = convexPointsArr.sort((a, b) => {
-    const v = new Vector(1, 0);
-    const phi1 = degBetweenVectors(vectorFromPoints(center, a), v);
-    const phi2 = degBetweenVectors(vectorFromPoints(center, b), v);
-    return phi1 - phi2;
-  });
+  const v = new Vector(1, 0);
+  const outPoints = sortBy(convexPointsArr, (p) =>
+    atan2AngleRad(v, vectorFromPoints(center, p))
+  );
   return { points: outPoints };
 };
 
-const cosAngle = (p1: Point, p2: Point, p3: Point): number => {
-  const v1 = vectorFromPoints(p1, p2);
-  const v2 = vectorFromPoints(p2, p3);
-  return Math.acos((v1.x * v2.x + v1.y * v2.y) / (v1.length() * v2.length()));
-};
-
 const getConvexJarvis = (points: Point[]): Polygon => {
-  if (points.length < 4) return { points };
   let first = points[0];
   for (const p of points) {
     if (p.y < first.y) {
@@ -298,7 +310,7 @@ const getConvexJarvis = (points: Point[]): Polygon => {
     let maxLen = 1e9;
     let next = -1;
     for (let i = 0; i < points.length; i++) {
-      const curCosAngle = cosAngle(prev, cur, points[i]);
+      const curCosAngle = cosAngleDeg(prev, cur, points[i]);
       const curLen = vectorFromPoints(cur, points[i]).length();
       if (curCosAngle <= minCosAngle) {
         next = i;
@@ -321,14 +333,7 @@ const getConvexJarvis = (points: Point[]): Polygon => {
 
 const getLast = <T>(a: T[], i = 1): T => a[a.length - i];
 
-const atan2Angle = (v1: Vector, v2: Vector): number => {
-  const dot = v1.x * v2.x + v1.y * v2.y;
-  const det = v1.multiplyLeft(v2);
-  return Math.atan2(det, dot);
-};
-
 export const getConvexGraham = (points: Point[]): Polygon => {
-  if (points.length < 4) return { points };
   let p0 = points[0];
   for (const p of points) {
     if (p.y < p0.y || (approxEquals(p.y, p0.y) && p.x > p0.x)) {
@@ -336,16 +341,17 @@ export const getConvexGraham = (points: Point[]): Polygon => {
     }
   }
   const fp = { x: p0.x + 1, y: p0.y };
-  const pts = points.sort((a, b) => {
-    return cosAngle(p0, fp, a) - cosAngle(p0, fp, b);
-  });
+  const pts = sortBy(points, (p) => cosAngleDeg(p0, fp, p));
 
   const convex: Point[] = [];
   for (const p of pts) {
     while (convex.length >= 2) {
       const pn = getLast(convex, 1);
       const pn1 = getLast(convex, 2);
-      const a = atan2Angle(vectorFromPoints(pn1, pn), vectorFromPoints(pn, p));
+      const a = atan2AngleRad(
+        vectorFromPoints(pn1, pn),
+        vectorFromPoints(pn, p)
+      );
       if (a < 0) {
         convex.pop();
       } else {
@@ -361,6 +367,7 @@ export const getConvex = (
   points: Point[],
   algorithm: ConvexAlgorithm = ConvexAlgorithm.Triangle
 ): Polygon => {
+  if (points.length < 4) return { points };
   switch (algorithm) {
     case ConvexAlgorithm.Jarvis:
       return getConvexJarvis(points);

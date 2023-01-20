@@ -16,7 +16,7 @@ export const tasksList = [
     element: <GeneratePolygonPage />,
   },
   {
-    num: [9, 10],
+    num: [9, 10, 12],
     to: '/convex-finder',
     label: 'Нахождение выпуклой оболочки',
     element: <ConvexFinderPage />,
